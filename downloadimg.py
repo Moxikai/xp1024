@@ -6,7 +6,7 @@ requests模块下载图片;
 """
 import lxml,re,os
 from requests import get
-
+from lxml import etree
 class DownloadImage():
     #初始化
     def __init__(self):
@@ -27,7 +27,13 @@ class DownloadImage():
         imgs = self.parse_detail_imgs(content)
         return {'title': title,
                 'imgs': imgs}
-
+    #更新方法
+    def parse_detail2(self,content):
+        html = etree.HTML(content,parser=etree.HTMLParser(encoding='utf-8'))
+        titles = html.xpath('//h1[@id="subject_tpc"]/text()')
+        imgs = html.xpath('//div[@id="read_tpc"]/img/@src')
+        return {'title':titles[0],
+                'imgs':imgs}
     # 获取详情页图片链接
     def parse_detail_imgs(self, content):
         pattern = re.compile('<img src="(http://\S+)"')
