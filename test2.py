@@ -6,6 +6,7 @@
 from selenium import webdriver
 import re,os
 import sys
+from lxml import etree
 reload(sys)
 sys.setdefaultencoding('utf-8')
 class downloadHTML():
@@ -45,6 +46,12 @@ class downloadHTML():
                 i = 'http://r3.gcsitl.live/pw/' + i
                 links.add(i)
         return links
+    #获取列表页2
+    def parse_listpage2(self,content):
+        html = etree.HTML(content,parser=etree.HTMLParser(encoding='utf-8'))
+        links = html.xpath('//h3/a/@href')
+        return ['http://r3.gcsitl.live/pw/'+link for link in links if links is not None]
+
 
     #下载详情页面
     def download(self,url,content):
@@ -60,11 +67,11 @@ class downloadHTML():
         url = 'http://r3.gcsitl.live/pw/thread.php?fid=15'
         total = 0
         count = 0
-        for i in range(84,564):
+        for i in range(108,564):
             if i > 1:
-                url = url + '&page=%s'%i
+                url = 'http://r3.gcsitl.live/pw/thread.php?fid=15&page=%s'%i
             content = self.get_page(url)
-            links = self.parse_listpage(content)
+            links = self.parse_listpage2(content)
             total += len(links)
             for link in links:
                 content_detail = self.get_page(link)
