@@ -7,6 +7,7 @@ from selenium import webdriver
 import re,os
 import sys
 from lxml import etree
+from time import sleep
 reload(sys)
 sys.setdefaultencoding('utf-8')
 class downloadHTML():
@@ -16,10 +17,10 @@ class downloadHTML():
         self.driver = webdriver.Chrome()
         self.htmldir = os.path.join(os.path.dirname(__file__),'html')
           """
-        chromeOptions = webdriver.ChromeOptions()
+        self.chromeOptions = webdriver.ChromeOptions()
         prefs = {"profile.managed_default_content_settings.images": 2}
-        chromeOptions.add_experimental_option("prefs", prefs)
-        self.driver = webdriver.Chrome(chrome_options=chromeOptions)
+        self.chromeOptions.add_experimental_option("prefs", prefs)
+        self.driver = webdriver.Chrome(chrome_options=self.chromeOptions)
         self.htmldir = os.path.join(os.path.dirname(__file__), 'html')
 
     #创建文件夹
@@ -32,8 +33,16 @@ class downloadHTML():
 
     #渲染页面
     def get_page(self,url):
-        self.driver.get(url)
-        return self.driver.page_source
+        try:
+            self.driver.get(url)
+            return self.driver.page_source
+        except Exception as e:
+            print e
+            print '当前网页出错!休息10秒'
+            sleep(10)
+            self.driver = webdriver.Chrome(chrome_options=self.chromeOptions)
+            #调用自身
+            self.get_page(url)
 
     #获取列表页
     def parse_listpage(self,content):
@@ -56,6 +65,12 @@ class downloadHTML():
     #下载详情页面
     def download(self,url,content):
         filename = url.split('/')[-1]
+        #临时情况,重命名
+        if 'tid' in filename:
+            pass
+            pattern = re.compile('\d{5,}')
+            tid = pattern.findall(filename)[0]
+            filename = tid + '.html'
         filepath = os.path.join(self.htmldir,filename)
         with open(filepath,'w') as f:
             f.write(content)
@@ -67,7 +82,7 @@ class downloadHTML():
         url = 'http://r3.gcsitl.live/pw/thread.php?fid=15'
         total = 0
         count = 0
-        for i in range(108,564):
+        for i in range(325,564):
             if i > 1:
                 url = 'http://r3.gcsitl.live/pw/thread.php?fid=15&page=%s'%i
             content = self.get_page(url)
@@ -78,6 +93,14 @@ class downloadHTML():
                 self.download(link,content_detail)
                 count += 1
                 print '当前总链接数%s,已下载链接数%s'%(total,count)
+                #链接达到3000倍数时,重启服务
+                if count % 2000 == 0:
+                    self.driver.quit()
+                    print '链接数达到2000倍数,浏览器10秒后重启'
+                    sleep(10)
+                    self.driver = webdriver.Chrome(chrome_options=self.chromeOptions)
+
+
 if __name__ == '__main__':
     test = downloadHTML()
     test.run()
